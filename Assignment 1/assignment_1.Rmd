@@ -1,0 +1,36 @@
+---
+title: "Assignment 1"
+output:
+  pdf_document: default
+  word_document: default
+date: "2023-01-29"
+---
+```{r}
+#Dataset source: https://www.kaggle.com/datasets/imdevskp/corona-virus-report
+library(readr)
+SL_country_wise_latest <- read.csv("~/Downloads/archive (2)/country_wise_latest.csv")
+```
+
+```{r}
+#Showing the chosen Dataset
+summary(SL_country_wise_latest)
+
+#Modifying the variable with logic
+SL_country_wise_latest$Recovered<-(SL_country_wise_latest$Recovered-mean(SL_country_wise_latest$Recovered)/var(SL_country_wise_latest$Recovered))
+SL_country_wise_latest$Deaths
+
+#The Histogram's display
+hist(SL_country_wise_latest$Deaths)
+```
+
+
+```{r}
+#ScatterPlot
+
+library(ggplot2)
+ggplot(SL_country_wise_latest)+
+  aes(x=Recovered,y=Deaths)+
+  geom_point(shape="circle",size=1.5,colour="#112446")+
+  theme_minimal()
+```
+
