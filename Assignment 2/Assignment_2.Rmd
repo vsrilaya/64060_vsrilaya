@@ -1,0 +1,140 @@
+---
+title: "Assignment_2"
+author: "Srilaya Valmeekam"
+date: "2023-02-20"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+```{r}
+#Installing necessary packages
+library(caret)
+library(ggplot2)
+library(ISLR)
+library(dplyr)
+library(class)
+```
+
+
+```{r}
+#Importing the dataset
+library(readr)
+UniBank <- read.csv("~/Downloads/UniversalBank.csv")
+
+```
+
+```{r}
+#Executing a K-NN classification with all attributes except for ID and ZIP code.
+UniBank$ID <- NULL
+UniBank$ZIP.Code <- NULL
+summary(UniBank)
+UniBank$Personal.Loan =  as.factor(UniBank$Personal.Loan)
+```
+
+```{r}
+#Creating dummy  variables
+education_1 <- ifelse(UniBank$Education==1 ,1,0)
+
+education_2 <- ifelse(UniBank$Education==2 ,1,0)
+
+education_3 <- ifelse(UniBank$Education==3 ,1,0)
+```
+
+```{r}
+#Removing and combining education variable
+unibank<-data.frame(Age=UniBank$Age,Experience=UniBank$Experience,Income=UniBank$Income,Family=UniBank$Family,CCAvg=UniBank$CCAvg, education_1=education_1,education_2=education_2,education_3=education_3,Personal.Loan=UniBank$Personal.Loan,Mortgage=UniBank$Mortgage,Securities.Account=UniBank$Securities.Account,CD.Account=UniBank$CD.Account,Online=UniBank$Online,CreditCard=UniBank$CreditCard)
+head(unibank)
+```
+
+```{r}
+#separating into validation and training
+Model.normalise <- preProcess(UniBank[, -8],method = c("center", "scale"))
+summary(UniBank)
+UniBank.normalise <- predict(Model.normalise,UniBank)
+summary(UniBank.normalise)
+Index_Train <- createDataPartition(UniBank$Personal.Loan, p = 0.6, list = FALSE)
+Train = UniBank.normalise[Index_Train,]
+validation = UniBank.normalise[-Index_Train,]
+```
+
+```{r}
+#Q1
+#Data prediction
+library(FNN)
+to_Predict = data.frame(Age = 40, Experience = 10, Income = 84, Family = 2,
+                     CCAvg = 2, Education = 1, Mortgage = 0, Securities.Account =
+                       0, CD.Account = 0, Online = 1, CreditCard = 1)
+print(to_Predict)
+Predict.Normalise <- predict(Model.normalise,to_Predict)
+Predictions <- knn(train= as.data.frame(Train[,1:7,9:12]),
+                  test = as.data.frame(Predict.Normalise[,1:7,9:12]),
+                  cl= Train$Personal.Loan,
+                  k=1)
+```
+
+```{r}
+#Q2
+#Value of K that gives largest accuracy
+set.seed(123)
+UniBank <- trainControl(method= "repeatedcv", number = 3, repeats = 2)
+searchGrid = expand.grid(k=1:10)
+knn.model = train(Personal.Loan~., data = Train, method = 'knn', tuneGrid = searchGrid,trControl = UniBank)
+knn.model
+#The value of k is 3.This is the value that balances between overfitting and ignoring the predictor information
+```
+
+
+
+```{r}
+#Q3
+#Finding Confusion matrix using the K value
+UniBank_prediction <- predict(knn.model,validation)
+confusionMatrix(UniBank_prediction,validation$Personal.Loan)
+#This matrix has a 94.5% accuracy.
+#This the confusion matrix for the validation data that results from using the best k.
+```
+
+
+
+
+
+```{r}
+#Q4
+#Classifying and predicting the customer
+ForPredictNorm = data.frame(Age = 40, Experience = 10, Income = 84, Family = 2,
+                              CCAvg = 2, Education = 1, Mortgage = 0,
+                              Securities.Account =0, CD.Account = 0, Online = 1,
+                              CreditCard = 1)
+ForPredictNorm = predict(Model.normalise, ForPredictNorm)
+predict(knn.model, ForPredictNorm)
+#It results in level 0,1
+```
+
+```{r}
+#Q5
+#Partitioning the data into 3 parts
+#Creating Training, Test, and validation sets from the data collection.
+Train_size = 0.5 #training(50%)
+Train_Index = createDataPartition(UniBank.normalise$Personal.Loan, p = 0.5, list = FALSE)
+Train = UniBank.normalise[Train_Index,]
+
+valid_size = 0.3 #validation(30%)
+Validation_Index = createDataPartition(UniBank.normalise$Personal.Loan, p = 0.3, list = FALSE)
+validation = UniBank.normalise[Validation_Index,]
+
+Test_size = 0.2 #Test Data(20%)
+Test_Index = createDataPartition(UniBank.normalise$Personal.Loan, p = 0.2, list = FALSE)
+Test = UniBank.normalise[Test_Index,]
+
+
+Trainingknn <- knn(train = Train[,-8], test = Train[,-8], cl = Train[,8], k =3)
+Validknn <- knn(train = Train[,-8], test = validation[,-8], cl = Train[,8], k =3)
+Testingknn <- knn(train = Train[,-8], test = Test[,-8], cl = Train[,8], k =3)
+
+confusionMatrix(Trainingknn, Train[,8])
+confusionMatrix(Validknn, validation[,8])
+confusionMatrix(Testingknn, Test[,8])
+```
+
