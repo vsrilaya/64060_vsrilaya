@@ -1,12 +1,12 @@
 ---
 title: "Assignment_2"
 author: "Srilaya Valmeekam"
-date: "2023-02-20"
+date: "2023-02-19"
 output:
   html_document:
     df_print: paged
-  pdf_document: default
   word_document: default
+  pdf_document: default
 ---
 ```{r}
 #Installing necessary packages
