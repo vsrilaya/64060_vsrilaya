@@ -1,0 +1,116 @@
+---
+title: "Assignment 4"
+author: "Srilaya Valmeekam"
+date: "03-18-2023"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(readr)
+Pharmaceuticals_SLV <- read.csv("~/Downloads/Pharmaceuticals.csv")
+```
+
+```{r}
+library(ggplot2)
+library(factoextra)
+library(flexclust)
+library(cluster)
+library(tidyverse)
+summary(Pharmaceuticals_SLV)
+
+#Task 1
+#Use only the numerical variables (1 to 9) to cluster the 21 firms. 
+#Justify the various choices #made in conducting the cluster analysis, 
+#such as weights for different variables, the specific 
+#clustering algorithm(s) used, the number of clusters formed, and so on. 
+SLV <- na.omit(Pharmaceuticals_SLV)
+SLV
+row.names <- SLV[,1]
+Pharmaceuticals1 <-  SLV[,3:11]
+head(Pharmaceuticals1)
+Pharmaceuticals2 <- scale(Pharmaceuticals1)
+head(Pharmaceuticals2)
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "wss") +
+  labs(subtitle = "Elbow Method")
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "silhouette") + labs(subtitle = "Silhouette Method")
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "gap_stat") + labs(subtitle = "Gap Stat Method")
+```
+```{r}
+set.seed(64060)
+k5 <- kmeans(Pharmaceuticals2, centers = 5, nstart = 25)
+k5 $centers
+fviz_cluster(k5, data = Pharmaceuticals2)
+k5
+Distance <- dist(Pharmaceuticals2, method = "euclidian")
+fviz_dist(Distance)
+Fitting <- kmeans(Pharmaceuticals2,5)
+aggregate(Pharmaceuticals2,by = list(Fitting$cluster), FUN = mean)
+Pharmaceuticals3 <- data.frame(Pharmaceuticals2,Fitting$cluster)
+Pharmaceuticals3
+library(cluster)
+clusplot(Pharmaceuticals2,Fitting$cluster, color = TRUE, shade = TRUE, 
+         labels = 2,
+         lines = 0)
+```
+
+
+```{r}
+#Task 2
+#Interpret the clusters with respect to the numerical variables used in forming the clusters.
+
+aggregate(Pharmaceuticals2, by = list(Fitting$cluster), FUN = mean)
+Pharmacy <- data.frame(Pharmaceuticals2,k5$cluster)
+Pharmacy
+#CLuster 1:- JNJ, MRK, GSK, PFE
+#Cluster 1: Highest Market_Cap and lowest Beta/PE Ratio
+#Cluster 2:- AHM, WPI, AVE
+#Cluster 2: Highest Revenue Growth and lowest PE/Asset Turnover Ratio
+#Cluster 3:- CHTT, IVX, MRX, ELN
+#Cluster 3: Highest Beta/leverage/Asset Turnover Ratio and lowest 
+#Net_Profit_Margin, PE ratio and Marke#Cluster
+#Cluster 4:- AGN,BAY, PHA
+#Cluster 4: Highest PE ratio and lowest Leverage/Asset_Turnover
+#Cluster 5:- ABT, WYE, AZN, SGP, BMY, NVS, LLY
+#Cluster 5: Highest Net_Proft_Margin and lowest Leverage
+```
+
+
+```{r}
+#Task3
+#Is there a pattern in the clusters with respect to the numerical 
+#variables (10 to 12)? (those \n #not used in forming the clusters)
+
+S1 <- Pharmaceuticals_SLV[12:14] %>% mutate(Clusters=k5$cluster)
+ggplot(S1, mapping = aes(factor(Clusters), fill =Median_Recommendation))+geom_bar(position='dodge')+labs(x ='Clusters',y ='Frequence')
+ggplot(S1, mapping = aes(factor(Clusters),fill = Location))+
+  geom_bar(position = 'dodge')+labs(x ='Clusters',y = 'Frequence')
+ggplot(S1, mapping = aes(factor(Clusters),fill = Exchange))+geom_bar(position = 'dodge')+
+  labs(x ='Clusters',y = 'Frequence')
+#The graphs above show that there is a slim pattern in the clusters.
+
+#Although the cluster 1 has a different Hold and Moderate Buy median, a different count from the US and Germany, and a different country count, the firms are evenly divided among AMEX,NASDAQ and NYSE.
+
+#The cluster 2 is only listed on the NYSE, has equal Hold and Moderate Buy medians, and is evenly divided across the US and Canada.
+
+##Cluster 3 is a stock that is listed on the NYSE and has distinct counts for France, Ireland, and the US in addition to equal Moderate Buy and Sell medians.
+
+#In Cluster 4, the Moderate Buy, Strong Buy, and Hold medians are in order of greatest to lowest. They are listed on the NYSE and originated from the US, the UK, and Switzerland.
+
+#Cluster 5 is distributed throughout the United States and the United Kingdom, has the same hold and moderate buy medians, and is also listed on the NYSE.
+```
+
+
+```{r}
+#TASK 4
+#Provide an appropriate name for each cluster using any or all of the variables in the dataset. 
+
+#Cluster 1 :- Buy Cluster
+#Cluster 2 :- Sceptical Cluster
+#Cluster 3 :- Moderate Buy Cluster
+#Cluster 4 :- Hold Cluster
+#Cluster 5 :- High Hold Cluster 
+```
