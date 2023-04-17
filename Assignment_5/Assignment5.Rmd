@@ -1,0 +1,154 @@
+---
+title: "Assignment 5"
+author: "Srilaya Valmeekam"
+date: "04-15-2023"
+output:
+  word_document: default
+  pdf_document: default
+---
+```{r}
+#Displaying the required libraries
+library(cluster)
+library(caret)
+library(dendextend)
+library(knitr)
+library(factoextra)
+library(readr)
+```
+
+```{r}
+#Creating a data set with only numerical data by importing a dataset
+library(readr)
+sl_Cereals <- read.csv("~/Downloads/Cereals.csv")
+Num_data <- data.frame(sl_Cereals[,4:16])
+```
+
+```{r}
+#Deleting all cereals with missing values
+Num_data <- na.omit(Num_data)
+```
+
+```{r}
+#Normalizing data
+sl_Cereals_normalise <- scale(Num_data)
+```
+***Apply hierarchical clustering to the adjusted data using the Euclidean distance technique***
+```{r}
+Dist <- dist(sl_Cereals_normalise, method = "euclidean")
+H_clust <- hclust(Dist, method = "complete")
+```
+
+```{r}
+#the dendogram plotting process.
+plot(H_clust, cex = 0.7, hang = -1)
+```
+
+
+**Comparing the Clustering with single linkage, complete linkage, average linkage and Ward using the Agnes function/**
+```{r}
+single_Hclust <- agnes(sl_Cereals_normalise, method = "single")
+complete_Hclust <- agnes(sl_Cereals_normalise, method = "complete")
+average_Hclust <- agnes(sl_Cereals_normalise, method = "average")
+ward_Hclust <- agnes(sl_Cereals_normalise, method = "ward")
+```
+
+***Choosing the best method***
+
+```{r}
+#Choosing the best method
+print(single_Hclust$ac)
+print(complete_Hclust$ac)
+print(average_Hclust$ac)
+print(ward_Hclust$ac)
+```
+#The ward strategy is the most successful one, as shown by its value of 0.9046042, which is evident given the facts provided.
+
+***Choosing the clusters***
+```{r}
+pltree(ward_Hclust, cex = 0.5, hang = -1, main = "Dendrogram of agnes (Using Ward)")
+rect.hclust(ward_Hclust, k = 5, border = 2:7)
+S_Group <- cutree(ward_Hclust, k=5)
+D_frame_2 <- as.data.frame(cbind(sl_Cereals_normalise,S_Group))
+```
+```{r}
+fviz_cluster(list(data = D_frame_2, cluster = S_Group))
+```
+#From the observation mentioned above, clusters can be selected.
+
+***Determining the stability and structure of the clusters*** 
+
+```{r}
+#Partitioning the data into A and B
+set.seed(123)
+partition_A <- Num_data[1:55,]
+partition_B <- Num_data[56:74,]
+```
+
+```{r}
+#Performing the Hierarchical Clustering of each partition while considering k = 6.
+single_sl <- agnes(scale(partition_A), method = "single")
+complete_sl <- agnes(scale(partition_A), method = "complete")
+average_sl <- agnes(scale(partition_A), method = "average")
+ward_sl <- agnes(scale(partition_A), method = "ward")
+cbind(single=single_sl$ac , complete=complete_sl$ac , average= average_sl$ac , ward= ward_sl$ac)
+pltree(ward_sl, cex = 0.6, hang = -1, main = "Dendogram of Agnes with Partitioned Data (Using Ward)")
+rect.hclust(ward_sl, k = 6, border = 2:7)
+cut_2 <- cutree(ward_sl, k = 6)
+```
+
+```{r}
+#the centroids are calculated.
+sl_result <- as.data.frame(cbind(partition_A, cut_2))
+sl_result[sl_result$cut_2==1,]
+one_centroid <- colMeans(sl_result[sl_result$cut_2==1,])
+sl_result[sl_result$cut_2==2,]
+two_centroid <- colMeans(sl_result[sl_result$cut_2==2,])
+sl_result[sl_result$cut_2==3,]
+three_centroid <- colMeans(sl_result[sl_result$cut_2==3,])
+sl_result[sl_result$cut_2==4,]
+four_centroid <- colMeans(sl_result[sl_result$cut_2==4,])
+centroids <- rbind(one_centroid, two_centroid, three_centroid, four_centroid)
+x2 <- as.data.frame(rbind(centroids[,-14], partition_B))
+```
+
+```{r}
+#finding the Distance
+Dist_1 <- get_dist(x2)
+Matrix_1 <- as.matrix(Dist_1)
+dataframe1 <- data.frame(data=seq(1,nrow(partition_B),1), Clusters =rep(0,nrow(partition_B)))
+for(i in 1:nrow(partition_B)) 
+  {dataframe1[i,2] <- which.min(Matrix_1[i+4, 1:4])}
+dataframe1
+cbind(D_frame_2$S_Group[56:74], dataframe1$Clusters)
+table(D_frame_2$S_Group[56:74] == dataframe1$Clusters)
+```
+
+#Our findings from the observation mentioned above are 9 False and 10 True. As a result, we may say that the model is just partially unstable.
+
+#The elementary public schools would like to choose a set of sl_Cereals to include in their daily cafeterias. Every day a different cereal is offered, but all sl_Cereals should support a healthy diet. For this goal, you are requested to find a cluster of “healthy Cereals''
+
+
+***finding Clusters of Healthy Cereals***
+
+```{r}
+#Clustering Healthy sl_Cereals
+Healthy_sl_Cereals <- sl_Cereals
+Healthy_sl_Cereals_RD <- na.omit(Healthy_sl_Cereals)
+clust <- cbind(Healthy_sl_Cereals_RD, S_Group)
+clust[clust$S_Group==1,]
+clust[clust$S_Group==2,]
+clust[clust$S_Group==3,]
+clust[clust$S_Group==4,]
+```
+
+```{r}
+#Mean ratings are used to select the best cluster.
+mean(clust[clust$S_Group==1,"rating"])
+mean(clust[clust$S_Group==2,"rating"])
+mean(clust[clust$S_Group==3,"rating"])
+mean(clust[clust$S_Group==4,"rating"])
+```
+
+#Cluster 1 may be chosen based on the data mentioned above because it is the highest.
+#Therefore, Group 1 may be considered of as the cluster for a healthy diet.
+
